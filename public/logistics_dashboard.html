@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logistics Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f4f8;
+            color: #333;
+        }
+        .dashboard-header {
+            background: linear-gradient(135deg, #2c7744, #5a3f37);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .provider-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .company-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #2c7744;
+        }
+        .logout-btn {
+            background: transparent;
+            border: 1px solid white;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .dashboard-content {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        .welcome-banner {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+        .welcome-banner h1 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        }
+        .stat-card h3 {
+            color: #5a3f37;
+            margin-top: 0;
+            font-size: 1.1rem;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c7744;
+            margin: 10px 0;
+        }
+        .dashboard-sections {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        }
+        .section h2 {
+            color: #2c7744;
+            margin-top: 0;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+        }
+        .order-list {
+            list-style: none;
+            padding: 0;
+        }
+        .order-item {
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .order-id {
+            font-weight: bold;
+            color: #5a3f37;
+        }
+        .order-status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        .status-pending {
+            background: #ffecb3;
+            color: #f57c00;
+        }
+        .status-in-transit {
+            background: #bbdefb;
+            color: #1976d2;
+        }
+        .status-delivered {
+            background: #c8e6c9;
+            color: #388e3c;
+        }
+        .action-btn {
+            background: #2c7744;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .map-placeholder {
+            height: 200px;
+            background: #e9ecef;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+            border-top: 1px solid #eee;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="logo">DeliveryExpress</div>
+        <div class="provider-info">
+            <div class="company-avatar" id="companyInitial">L</div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </header>
+    
+    <main class="dashboard-content">
+        <section class="welcome-banner">
+            <h1>Logistics Dashboard: <span id="companyName">Logistics Provider</span></h1>
+            <p>Manage shipments, track vehicles, and monitor delivery operations.</p>
+        </section>
+        
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3>Active Shipments</h3>
+                <div class="stat-value">42</div>
+                <div>+5 from yesterday</div>
+            </div>
+            <div class="stat-card">
+                <h3>On-time Delivery Rate</h3>
+                <div class="stat-value">96%</div>
+                <div>Industry average: 89%</div>
+            </div>
+            <div class="stat-card">
+                <h3>Available Vehicles</h3>
+                <div class="stat-value">8/12</div>
+                <div>4 vehicles in transit</div>
+            </div>
+            <div class="stat-card">
+                <h3>Revenue This Month</h3>
+                <div class="stat-value">$18,240</div>
+                <div>+12% from last month</div>
+            </div>
+        </div>
+        
+        <div class="dashboard-sections">
+            <div class="section">
+                <h2>Recent Shipments</h2>
+                <ul class="order-list">
+                    <li class="order-item">
+                        <div>
+                            <div class="order-id">#SH-7842</div>
+                            <div>New York to Boston</div>
+                        </div>
+                        <div class="order-status status-in-transit">In Transit</div>
+                    </li>
+                    <li class="order-item">
+                        <div>
+                            <div class="order-id">#SH-7801</div>
+                            <div>Chicago to Detroit</div>
+                        </div>
+                        <div class="order-status status-pending">Pending Pickup</div>
+                    </li>
+                    <li class="order-item">
+                        <div>
+                            <div class="order-id">#SH-7793</div>
+                            <div>Los Angeles to San Francisco</div>
+                        </div>
+                        <div class="order-status status-in-transit">In Transit</div>
+                    </li>
+                    <li class="order-item">
+                        <div>
+                            <div class="order-id">#SH-7788</div>
+                            <div>Miami to Atlanta</div>
+                        </div>
+                        <div class="order-status status-delivered">Delivered</div>
+                    </li>
+                </ul>
+                <button class="action-btn" style="margin-top: 20px;">View All Shipments</button>
+            </div>
+            
+            <div class="section">
+                <h2>Vehicle Tracking</h2>
+                <div class="map-placeholder">
+                    Live Vehicle Tracking Map
+                </div>
+                <div>
+                    <h3>Vehicle Status</h3>
+                    <ul>
+                        <li>5 vehicles on route</li>
+                        <li>3 vehicles available</li>
+                        <li>2 vehicles in maintenance</li>
+                    </ul>
+                </div>
+                <button class="action-btn" style="margin-top: 20px;">Manage Fleet</button>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <p>&copy; 2023 DeliveryExpress. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Fetch provider data on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('/api/user');
+                if (response.ok) {
+                    const providerData = await response.json();
+                    document.getElementById('companyName').textContent = providerData.company || 'Logistics Provider';
+                    document.getElementById('companyInitial').textContent = providerData.company ? providerData.company.charAt(0) : 'L';
+                } else {
+                    window.location.href = '/login.html';
+                }
+            } catch (error) {
+                console.error('Error fetching provider data:', error);
+            }
+        });
+
+        function logout() {
+            fetch('/logout')
+                .then(() => window.location.href = '/login.html')
+                .catch(error => console.error('Logout failed:', error));
+        }
+    </script>
+</body>
+</html>
