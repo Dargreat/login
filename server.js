@@ -2,73 +2,99 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb'); // Added ObjectId
 
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// Session middleware
+// Session middleware with enhanced security
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false } // Set true for HTTPS
+    saveUninitialized: false, // Changed to false for GDPR compliance
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production', // Auto HTTPS in production
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
 }));
 
 // Database Connection
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
 
+let db; // Use single database connection
+
 async function connectDB() {
     try {
         await client.connect();
+        db = client.db();
         console.log("Connected to MongoDB");
     } catch (e) {
-        console.error(e);
+        console.error("DB connection failed:", e);
+        process.exit(1);
     }
 }
 connectDB();
 
+// User type validation middleware
+const validateUserType = (req, res, next) => {
+    const validTypes = ['user', 'logistics'];
+    if (!validTypes.includes(req.body.userType)) {
+        return res.status(400).send('Invalid user type');
+    }
+    next();
+};
+
 // Routes
-app.post('/signup', async (req, res) => {
+app.post('/signup', validateUserType, async (req, res) => {
     const { userType, email, password, ...userData } = req.body;
-    const db = client.db();
     
     try {
-        // Check existing user
+        // Check existing user across all types
         const existingUser = await db.collection('users').findOne({ email });
-        if (existingUser) return res.status(400).send('User already exists');
+        if (existingUser) {
+            return res.status(400).send('Email already registered');
+        }
 
         // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(password, 12);
 
-        // Create user document
+        // Create user document with type validation
         const newUser = {
             email,
             password: hashedPassword,
             userType,
             ...userData,
-            createdAt: new Date()
+            createdAt: new Date(),
+            verified: false // Add verification status
         };
 
         await db.collection('users').insertOne(newUser);
         res.redirect('/login.html');
     } catch (err) {
+        console.error("Signup error:", err);
         res.status(500).send('Error registering user');
     }
 });
 
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
-    const db = client.db();
 
     try {
         const user = await db.collection('users').findOne({ email });
-        if (!user) return res.status(400).send('Invalid credentials');
-
+        
+        // Combined security message
+        if (!user) return res.status(401).send('Invalid email or password');
+        
         const validPassword = await bcrypt.compare(password, user.password);
-        if (!validPassword) return res.status(400).send('Invalid credentials');
+        if (!validPassword) return res.status(401).send('Invalid email or password');
+
+        // Verify account type exists
+        if (!user.userType || !['user', 'logistics'].includes(user.userType)) {
+            return res.status(403).send('Account type invalid');
+        }
 
         // Create session
         req.session.user = {
@@ -77,23 +103,23 @@ app.post('/login', async (req, res) => {
             userType: user.userType
         };
 
-        // Redirect based on user type
-        if (user.userType === 'user') {
-            res.redirect('/user_dashboard.html');
-        } else if (user.userType === 'logistics') {
-            res.redirect('/logistics_dashboard.html');
-        }
+        // Redirect based on verified user type
+        res.redirect(`/${user.userType}_dashboard.html`);
+        
     } catch (err) {
+        console.error("Login error:", err);
         res.status(500).send('Login error');
     }
 });
 
 app.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/login.html');
+    req.session.destroy(err => {
+        if (err) console.error('Session destruction error:', err);
+        res.redirect('/login.html');
+    });
 });
 
-// Add this middleware to protect routes
+// Route protection middleware
 const requireAuth = (req, res, next) => {
     if (!req.session.user) {
         return res.redirect('/login.html');
@@ -101,38 +127,42 @@ const requireAuth = (req, res, next) => {
     next();
 };
 
-// Add this route to get current user data
+// User data endpoint
 app.get('/api/user', requireAuth, async (req, res) => {
     try {
-        const db = client.db();
         const user = await db.collection('users').findOne(
             { _id: new ObjectId(req.session.user.id) },
-            { projection: { password: 0 } } // Exclude password
+            { projection: { password: 0 } }
         );
         
-        if (user) {
-            res.json(user);
-        } else {
-            res.status(404).send('User not found');
-        }
+        user 
+            ? res.json(user) 
+            : res.status(404).send('User not found');
     } catch (err) {
+        console.error("User data error:", err);
         res.status(500).send('Server error');
     }
 });
 
-// Protect dashboard routes
-app.get('/user_dashboard.html', requireAuth, (req, res) => {
-    if (req.session.user.userType !== 'user') {
+// Protected dashboard routes with type validation
+const requireUserType = (type) => (req, res, next) => {
+    if (req.session.user?.userType !== type) {
         return res.redirect('/login.html');
     }
+    next();
+};
+
+app.get('/user_dashboard.html', requireAuth, requireUserType('user'), (req, res) => {
     res.sendFile(__dirname + '/public/user_dashboard.html');
 });
 
-app.get('/logistics_dashboard.html', requireAuth, (req, res) => {
-    if (req.session.user.userType !== 'logistics') {
-        return res.redirect('/login.html');
-    }
+app.get('/logistics_dashboard.html', requireAuth, requireUserType('logistics'), (req, res) => {
     res.sendFile(__dirname + '/public/logistics_dashboard.html');
+});
+
+// Handle 404 errors
+app.use((req, res) => {
+    res.status(404).send('Page not found');
 });
 
 const PORT = process.env.PORT || 3000;
