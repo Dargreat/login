@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .dashboard-header {
+            background: linear-gradient(135deg, #4b6cb7, #182848);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #4b6cb7;
+        }
+        .logout-btn {
+            background: transparent;
+            border: 1px solid white;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .dashboard-content {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        .welcome-banner {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+        .welcome-banner h1 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+        .card h3 {
+            color: #4b6cb7;
+            margin-top: 0;
+        }
+        .card p {
+            color: #666;
+            line-height: 1.6;
+        }
+        .action-btn {
+            background: #4b6cb7;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+            border-top: 1px solid #eee;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="logo">DeliveryExpress</div>
+        <div class="user-info">
+            <div class="user-avatar" id="userInitial">U</div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </header>
+    
+    <main class="dashboard-content">
+        <section class="welcome-banner">
+            <h1>Welcome back, <span id="userName">User</span>!</h1>
+            <p>Track your shipments, view delivery history, and manage your account.</p>
+        </section>
+        
+        <div class="dashboard-cards">
+            <div class="card">
+                <h3>Create New Shipment</h3>
+                <p>Send a package to any destination with our reliable delivery network.</p>
+                <button class="action-btn">Create Shipment</button>
+            </div>
+            
+            <div class="card">
+                <h3>Track Packages</h3>
+                <p>Monitor your shipments in real-time with our tracking system.</p>
+                <button class="action-btn">Track Now</button>
+            </div>
+            
+            <div class="card">
+                <h3>Delivery History</h3>
+                <p>View your past shipments and delivery records.</p>
+                <button class="action-btn">View History</button>
+            </div>
+            
+            <div class="card">
+                <h3>Account Settings</h3>
+                <p>Update your profile, payment methods, and preferences.</p>
+                <button class="action-btn">Manage Account</button>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <p>&copy; 2023 DeliveryExpress. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Fetch user data on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('/api/user');
+                if (response.ok) {
+                    const userData = await response.json();
+                    document.getElementById('userName').textContent = userData.name || 'User';
+                    document.getElementById('userInitial').textContent = userData.name ? userData.name.charAt(0) : 'U';
+                } else {
+                    window.location.href = '/login.html';
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
+        });
+
+        function logout() {
+            fetch('/logout')
+                .then(() => window.location.href = '/login.html')
+                .catch(error => console.error('Logout failed:', error));
+        }
+    </script>
+</body>
+</html>
